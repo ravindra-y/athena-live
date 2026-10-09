@@ -101,9 +101,26 @@ Clone the repository and navigate into the directory:
 git clone https://github.com/YOUR_USERNAME/athena-live.git
 cd athena-live
 ```
+
+Create and activate a Python virtual environment:
+```bash
+# Windows
+python -m venv venv
+.\venv\Scripts\activate
+
+# macOS/Linux
+python -m venv venv
+source venv/bin/activate
+```
+
 Install dependencies:
 ```bash
-pip install fastapi "uvicorn[standard]" google-genai google-adk python-dotenv websockets
+pip install -r requirements.txt
+```
+
+Since the project uses Playwright, you also need to install the required browser binaries:
+```bash
+playwright install
 ```
 
 ### 3️⃣ Environment Configuration

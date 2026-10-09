@@ -24,6 +24,7 @@ let transcriptResetTimer = null;
 let nextPlayTime = 0;
 let activeAudioSources = [];
 const pendingVisuals = new Map();
+const seenBrowserActions = new Set();
 
 // DOM Elements
 const statusDot = document.getElementById("status-dot");
@@ -138,38 +139,13 @@ muteBtn.addEventListener("click", () => {
 
 function clearVisualCanvas() {
   visualContainer.innerHTML = `
-          <div
-            class="p-5 rounded-sm bg-white/5 border border-white/10 shadow-sm text-sm space-y-3 tech-border"
-          >
-            <div
-              class="flex items-center gap-2 text-primary font-bold text-xs uppercase tracking-widest"
-            >
-              <i data-lucide="cpu" class="w-4 h-4"></i>
-              Athena Visual Engine
-            </div>
-            <h3 class="font-light text-white text-lg hero-heading">
-              Request Diagnostics
-            </h3>
-            <p class="text-white/50 text-xs font-light leading-relaxed">
-              Voice command examples:
-            </p>
-            <ul class="text-xs text-white/70 space-y-3 font-mono">
-              <li class="flex items-start gap-2">
-                <span class="text-primary mt-0.5">></span>
-                <span>"Generate an image of a futuristic data center"</span>
-              </li>
-              <li class="flex items-start gap-2">
-                <span class="text-primary mt-0.5">></span>
-                <span>"Send me the documentation link for BigQuery"</span>
-              </li>
-              <li class="flex items-start gap-2">
-                <span class="text-primary mt-0.5">></span>
-                <span>"Quiz me on Kubernetes pods and services"</span>
-              </li>
-            </ul>
+          <div id="empty-visual-hint" class="text-center py-10 text-white/30 text-xs uppercase tracking-widest">
+            <i data-lucide="image" class="w-6 h-6 mx-auto mb-3 opacity-30"></i>
+            Visual Canvas Ready
           </div>
   `;
   pendingVisuals.clear();
+  seenBrowserActions.clear();
   lucide.createIcons();
 }
 
@@ -569,14 +545,52 @@ function renderToolVisual(action, data) {
             </div>
         `;
   } else if (action === "show_browser_card") {
+    if (data.id) {
+        if (seenBrowserActions.has(data.id)) return;
+        seenBrowserActions.add(data.id);
+    }
+    const res = data.result || {};
+    const statusColor = res.status === 'success' ? 'text-green-400' : 'text-red-400';
+    let detailsHtml = '';
+    
+    let actionLabel = 'Action completed';
+    if (data.tool === 'browser_open') actionLabel = 'Website opened';
+    if (data.tool === 'browser_search') actionLabel = 'Search completed';
+    if (data.tool === 'browser_click') actionLabel = 'Element clicked';
+    if (data.tool === 'browser_type') actionLabel = 'Text entered';
+    if (data.tool === 'browser_scroll') actionLabel = 'Page scrolled';
+
+    if (data.tool === 'browser_open' || data.tool === 'browser_search') {
+        detailsHtml = `
+            <div class="space-y-1">
+                <p class="text-white/60">URL: <span class="text-blue-400 break-all">${esc(res.message ? res.message.replace('Opened ', '') : (res.url || ''))}</span></p>
+                <p class="text-white/60">Title: <span class="text-white/80">${esc(res.title || '')}</span></p>
+            </div>
+        `;
+    } else if (data.tool === 'browser_inspect') {
+        actionLabel = 'Page inspected';
+        detailsHtml = `
+            <div class="space-y-1">
+                <p class="text-white/60">URL: <span class="text-blue-400 break-all">${esc(res.url || '')}</span></p>
+                <p class="text-white/60">Title: <span class="text-white/80">${esc(res.title || '')}</span></p>
+                <p class="text-white/60 mt-1">Found ${res.interactive_elements ? res.interactive_elements.length : 0} interactive elements.</p>
+            </div>
+        `;
+    } else {
+        detailsHtml = `<p class="text-white/80 break-words">${esc(res.message || '')}</p>`;
+    }
+
     card.innerHTML = `
             <div class="flex items-center justify-between">
-                <span class="text-[10px] font-bold tracking-wider uppercase text-purple-600 bg-purple-50 px-2 py-0.5 rounded">Browser Action</span>
+                <span class="text-[10px] font-bold tracking-wider uppercase text-purple-600 bg-purple-50 px-2 py-0.5 rounded">BROWSER</span>
                 <i data-lucide="globe" class="w-4 h-4 text-purple-500"></i>
             </div>
-            <h4 class="font-bold text-white text-sm">${data.tool.replace('browser_', '').toUpperCase()}</h4>
-            <div class="p-2.5 bg-white/5 rounded-lg text-xs text-white/80 break-all">
-                ${JSON.stringify(data.args)}
+            <h4 class="font-bold text-white text-sm mt-2">${esc(actionLabel)}</h4>
+            <div class="p-2.5 bg-white/5 rounded-lg text-xs mt-2 border border-white/10">
+                ${detailsHtml}
+            </div>
+            <div class="mt-2 text-[10px] font-bold tracking-wider uppercase ${statusColor}">
+                STATUS: ${esc(res.status || 'UNKNOWN')}
             </div>
         `;
   }

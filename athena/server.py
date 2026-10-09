@@ -157,6 +157,17 @@ async def ws_endpoint(websocket: WebSocket):
                             }
                         )
                     )
+                elif fr and fr.name.startswith("browser_"):
+                    result = dict(getattr(fr, "response", None) or {})
+                    await websocket.send_text(
+                        json.dumps(
+                            {
+                                "type": "tool_action",
+                                "action": "show_browser_card",
+                                "data": {"tool": fr.name, "result": result, "id": getattr(fr, "id", None) or ""}
+                            }
+                        )
+                    )
 
         # 4. Interruption (User barged in while Athena was speaking)
         if getattr(event, "interrupted", None):

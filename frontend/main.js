@@ -23,6 +23,7 @@ let transcriptResetTimer = null;
 // Audio playback queue (24kHz PCM from Gemini Live)
 let nextPlayTime = 0;
 let activeAudioSources = [];
+const pendingVisuals = new Map();
 
 // DOM Elements
 const statusDot = document.getElementById("status-dot");
@@ -34,6 +35,7 @@ const micToggleBtn = document.getElementById("mic-toggle-btn");
 const muteBtn = document.getElementById("mute-btn");
 const userMicBtn = document.getElementById("user-mic-btn");
 const clearChatBtn = document.getElementById("clear-chat-btn");
+const clearVisualBtn = document.getElementById("clear-visual-btn");
 const transcriptContainer = document.getElementById("transcript-container");
 const visualContainer = document.getElementById("visual-container");
 const messageCountLabel = document.getElementById("message-count");
@@ -134,6 +136,49 @@ muteBtn.addEventListener("click", () => {
   }
 });
 
+function clearVisualCanvas() {
+  visualContainer.innerHTML = `
+          <div
+            class="p-5 rounded-sm bg-white/5 border border-white/10 shadow-sm text-sm space-y-3 tech-border"
+          >
+            <div
+              class="flex items-center gap-2 text-primary font-bold text-xs uppercase tracking-widest"
+            >
+              <i data-lucide="cpu" class="w-4 h-4"></i>
+              Athena Visual Engine
+            </div>
+            <h3 class="font-light text-white text-lg hero-heading">
+              Request Diagnostics
+            </h3>
+            <p class="text-white/50 text-xs font-light leading-relaxed">
+              Voice command examples:
+            </p>
+            <ul class="text-xs text-white/70 space-y-3 font-mono">
+              <li class="flex items-start gap-2">
+                <span class="text-primary mt-0.5">></span>
+                <span>"Generate an image of a futuristic data center"</span>
+              </li>
+              <li class="flex items-start gap-2">
+                <span class="text-primary mt-0.5">></span>
+                <span>"Send me the documentation link for BigQuery"</span>
+              </li>
+              <li class="flex items-start gap-2">
+                <span class="text-primary mt-0.5">></span>
+                <span>"Quiz me on Kubernetes pods and services"</span>
+              </li>
+            </ul>
+          </div>
+  `;
+  pendingVisuals.clear();
+  lucide.createIcons();
+}
+
+if (clearVisualBtn) {
+  clearVisualBtn.addEventListener("click", () => {
+    clearVisualCanvas();
+  });
+}
+
 clearChatBtn.addEventListener("click", () => {
   transcriptContainer.innerHTML = `
         <div id="empty-transcript-hint" class="text-center py-8 text-white/30 text-xs">
@@ -145,7 +190,8 @@ clearChatBtn.addEventListener("click", () => {
   messageCountLabel.textContent = "0 messages";
   currentBubble = null;
   currentRole = null;
-  lucide.createIcons();
+  
+  clearVisualCanvas();
 });
 
 // Start Live WebSocket & Audio Session
@@ -343,7 +389,6 @@ function handleServerMessage(msg) {
 }
 
 // ---------- Generated visuals (image / SVG / Mermaid) ----------
-const pendingVisuals = new Map();
 
 function esc(str) {
   return String(str ?? "").replace(/[&<>"']/g, (c) => ({
@@ -369,7 +414,13 @@ function showVisualPending(msg) {
 
 function showVisualResult(msg) {
   const data = msg.data || {};
-  const key = pendingVisuals.has(msg.id) ? msg.id : "last";
+  const key = msg.id || "last";
+  
+  if (!pendingVisuals.has(key)) {
+    // If the canvas was cleared, or we already rendered this, ignore the delayed result
+    return;
+  }
+  
   const old = pendingVisuals.get(key);
   pendingVisuals.delete(key);
 

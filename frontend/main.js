@@ -517,6 +517,17 @@ function renderToolVisual(action, data) {
                 ${data.result || "Learning session in progress."}
             </div>
         `;
+  } else if (action === "show_browser_card") {
+    card.innerHTML = `
+            <div class="flex items-center justify-between">
+                <span class="text-[10px] font-bold tracking-wider uppercase text-purple-600 bg-purple-50 px-2 py-0.5 rounded">Browser Action</span>
+                <i data-lucide="globe" class="w-4 h-4 text-purple-500"></i>
+            </div>
+            <h4 class="font-bold text-white text-sm">${data.tool.replace('browser_', '').toUpperCase()}</h4>
+            <div class="p-2.5 bg-white/5 rounded-lg text-xs text-white/80 break-all">
+                ${JSON.stringify(data.args)}
+            </div>
+        `;
   }
 
   visualContainer.prepend(card);

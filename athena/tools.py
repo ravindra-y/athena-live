@@ -115,4 +115,6 @@ def to_frontend_action(tool_name: str, tool_args: dict):
         return {"action": "show_gcp_card", "data": tool_args}
     if tool_name == "learning_assistant":
         return {"action": "show_learning_widget", "data": tool_args}
+    if tool_name.startswith("browser_"):
+        return {"action": "show_browser_card", "data": {"tool": tool_name, "args": tool_args}}
     return None

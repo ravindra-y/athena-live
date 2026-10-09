@@ -13,6 +13,10 @@ from google.genai import types
 
 from .persona import ATHENA_INSTRUCTION
 from .tools import display_visual, gcp_assistant, learning_assistant, send_resource_link
+from .browser_tools import (
+    browser_open, browser_inspect, browser_search,
+    browser_click, browser_type, browser_scroll, browser_close
+)
 
 VOICE_NAME = os.getenv("LIVE_VOICE", "Aoede")
 MODEL_NAME = os.getenv("LIVE_MODEL", "gemini-3.8-live")
@@ -28,5 +32,9 @@ root_agent = Agent(
     ),
     name="athena",
     instruction=ATHENA_INSTRUCTION,
-    tools=[gcp_assistant, learning_assistant, display_visual, send_resource_link],
+    tools=[
+        gcp_assistant, learning_assistant, display_visual, send_resource_link,
+        browser_open, browser_inspect, browser_search,
+        browser_click, browser_type, browser_scroll, browser_close
+    ],
 )

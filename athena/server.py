@@ -21,6 +21,7 @@ from google.genai import types
 
 from .agent import root_agent
 from .tools import to_frontend_action, visual_callback_var
+from .browser_tools import browser_close
 from .visuals import GENERATED_DIR
 
 logging.basicConfig(level=logging.INFO)
@@ -196,6 +197,10 @@ async def ws_endpoint(websocket: WebSocket):
         log.info("WebSocket disconnected.")
     finally:
         live_request_queue.close()
+        try:
+            await browser_close()
+        except Exception as e:
+            log.error(f"Error closing browser: {e}")
 
 
 # Generated images/SVGs (must be mounted before the "/" static mount).
